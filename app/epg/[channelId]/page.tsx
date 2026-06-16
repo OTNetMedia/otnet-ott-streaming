@@ -61,11 +61,11 @@ export default async function LiveChannelPage({
   const [channelsResp, dashboardEpg] = await Promise.all([
     api.channels().catch((e) => {
       console.log(`[channel-page] /catalog/channels failed: ${e.message}`);
-      return { channels: [] as { _id: string; name?: string; logo?: string }[] };
+      return {} as Awaited<ReturnType<typeof api.channels>>;
     }),
     api.channelEpg(params.channelId, { back: 1, ahead: 48 }).catch((e) => {
-      console.log(`[channel-page] /dashboard/channels/${params.channelId}/epg failed: ${e.message}`);
-      return { channels: [] };
+      console.log(`[channel-page] /catalog/epg?channelId=${params.channelId} failed: ${e.message}`);
+      return {} as Awaited<ReturnType<typeof api.channelEpg>>;
     }),
   ]);
   console.log(

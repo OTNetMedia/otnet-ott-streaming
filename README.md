@@ -9,6 +9,8 @@ Live preview style is closer to Netflix / Prime Video: full-bleed hero with
 teaser playback, focus-tile rows, editorial rows, Prime-style EPG grid, and a
 cinematic content detail page.
 
+![Homepage with full-bleed hero and content rows](docs/homepage.png)
+
 ## Features
 
 - **Homepage** — rotating hero (with auto-play teaser + unmute), focus rows,
