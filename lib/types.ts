@@ -26,9 +26,16 @@ export interface Content {
   entitled?: boolean;
   paywall?: PaywallBlock;
   entitlementExpiresAt?: string;
-  // Optional short auto-play teaser video URL (mp4 / hls). When set, the
-  // hero background plays it muted+looped behind the title overlay.
-  teaser?: string;
+  // Optional short auto-play teaser. The newer API shape returns an object
+  // with DASH + HLS variants and a poster; the older shape was just a
+  // string URL. Accept both so we don't break old payloads.
+  teaser?: string | TeaserAsset;
+}
+
+export interface TeaserAsset {
+  duration?: number;
+  resources?: { poster?: string };
+  variants?: { protocol?: 'dash' | 'hls'; entrypoint?: string }[];
 }
 
 export interface PaywallBlock {
@@ -163,7 +170,25 @@ export const landscapeUrl = (c: Content) =>
   nonEmpty(c.backdrop) ??
   nonEmpty(c.media?.[0]?.backdrop);
 export const titleImageUrl = (c: Content) => nonEmpty(c.titleImage);
-export const teaserUrl = (c: Content) => nonEmpty(c.teaser);
+export const teaserUrl = (c: Content): string | undefined => {
+  const t = c.teaser;
+  if (!t) return undefined;
+  // Legacy: teaser was a plain string URL.
+  if (typeof t === 'string') return nonEmpty(t);
+  // New shape: pick the first DASH variant (shaka loads it natively); fall
+  // back to HLS, then to any entrypoint that's present.
+  const variants = t.variants ?? [];
+  const dash = variants.find((v) => v.protocol === 'dash')?.entrypoint;
+  const hls = variants.find((v) => v.protocol === 'hls')?.entrypoint;
+  const any = variants.find((v) => v.entrypoint)?.entrypoint;
+  return nonEmpty(dash) ?? nonEmpty(hls) ?? nonEmpty(any);
+};
+
+export const teaserPoster = (c: Content): string | undefined => {
+  const t = c.teaser;
+  if (!t || typeof t === 'string') return undefined;
+  return nonEmpty(t.resources?.poster);
+};
 export const isSeries = (c: Content) =>
   c.contentType === 'series' || (c.childCount ?? 0) > 0;
 export const primaryGenreName = (c: Content) => c.genres?.[0]?.name;
