@@ -140,6 +140,11 @@ export interface EPGResponse {
   channels?: EPGChannel[];
 }
 
+export interface SettingsResponseProfileLimit {
+  enabled?: boolean;
+  max?: number;
+}
+
 export interface SettingsResponse {
   viewerAuth?: {
     mode?: 'none' | 'otnet' | 'external';
@@ -152,7 +157,8 @@ export interface SettingsResponse {
   errorReporting?: { enabled?: boolean };
   adPolicy?: { blockSkipping?: boolean };
   branding?: { name?: string; logo?: string };
-  profileLimit?: number;
+  // Newer publishers return { enabled, max } here; older just a number.
+  profileLimit?: number | SettingsResponseProfileLimit;
 }
 
 // ---------- Safe accessors ----------

@@ -27,11 +27,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   if (signedIn) {
     try {
       const resp = await api.profiles();
-      profiles = (resp.profiles ?? []).map((p) => ({
-        index: p.index,
-        name: p.name,
+      profiles = (resp.profiles ?? []).map((p, i) => ({
+        // OTNet returns _id + name + avatar but no explicit index — the
+        // array position is the profileIndex used by the rest of the API.
+        index: i,
+        name: p.name ?? 'Profile',
         avatar: p.avatar,
-        kids: p.kids,
+        kids: !!p.kids || (typeof p.maxRating === 'string' && p.maxRating.length > 0),
       }));
     } catch {
       profiles = [];

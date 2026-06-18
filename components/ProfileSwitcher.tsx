@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { PinPrompt } from './PinPrompt';
 
 export interface ProfileSummary {
   index: number;
@@ -50,6 +51,7 @@ export function ProfileSwitcher({
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [pinFor, setPinFor] = useState<ProfileSummary | null>(null);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -64,15 +66,30 @@ export function ProfileSwitcher({
   const active = profiles.find((p) => p.index === activeIndex) ?? profiles[0];
   if (!active) return null;
 
-  async function switchTo(idx: number) {
-    setOpen(false);
-    if (idx === activeIndex) return;
-    await fetch('/api/viewer/profile', {
+  async function switchTo(idx: number, pin?: string) {
+    if (idx === activeIndex && !pin) return;
+    const r = await fetch('/api/auth/select-profile', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ profileIndex: idx }),
+      body: JSON.stringify(pin ? { profileIndex: idx, pin } : { profileIndex: idx }),
     });
+    if (r.status === 400) {
+      const data = await r.json().catch(() => ({}));
+      if (data.pinRequired) {
+        setOpen(false);
+        const p = profiles.find((x) => x.index === idx) ?? null;
+        setPinFor(p);
+        return { needsPin: true };
+      }
+    }
+    if (!r.ok) {
+      const data = await r.json().catch(() => ({}));
+      return { error: data };
+    }
+    setOpen(false);
+    setPinFor(null);
     router.refresh();
+    return { ok: true };
   }
 
   return (
@@ -143,6 +160,14 @@ export function ProfileSwitcher({
             Manage profiles
           </Link>
         </div>
+      )}
+
+      {pinFor && (
+        <PinPrompt
+          profileName={pinFor.name}
+          onCancel={() => setPinFor(null)}
+          onSubmit={(pin) => switchTo(pinFor.index, pin)}
+        />
       )}
     </div>
   );

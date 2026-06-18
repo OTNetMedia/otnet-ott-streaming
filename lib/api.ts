@@ -37,6 +37,8 @@ export async function apiFetch<T>(path: string, opts: FetchOpts = {}): Promise<T
   const url = path.startsWith('http') ? path : BASE + path;
   const viewerToken = opts.skipViewerAuth ? undefined : safeViewerToken();
   const headers: Record<string, string> = { 'X-Api-Key': getKey() };
+  // Profile binding is encoded inside the JWT — the server ignores
+  // X-Profile-Index on viewer-authed calls. Just send the Bearer.
   if (viewerToken) headers['Authorization'] = `Bearer ${viewerToken}`;
 
   const init: RequestInit = { headers };
@@ -129,10 +131,15 @@ export const api = {
     }>('/catalog/channels', { revalidate: 300 }),
   settings: () => apiFetch<SettingsResponse>('/catalog/settings', { revalidate: 30 }),
   profiles: () =>
-    apiFetch<{ profiles?: { index: number; name: string; avatar?: string; kids?: boolean }[] }>(
-      '/viewer/profiles',
-      { revalidate: 0 },
-    ),
+    apiFetch<{
+      profiles?: {
+        _id?: string;
+        name?: string;
+        avatar?: string;
+        maxRating?: string;
+        kids?: boolean;
+      }[];
+    }>('/viewer/profiles', { revalidate: 0 }),
   drmSession: (contentId: string, mediaIndex = 0) =>
     apiPost<DrmSession>('/playback/session', { contentId, mediaIndex }),
 };

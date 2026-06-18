@@ -19,7 +19,12 @@ export default async function ProfilesPage() {
   let profiles: { index: number; name: string; avatar?: string; kids?: boolean }[] = [];
   try {
     const resp = await api.profiles();
-    profiles = resp.profiles ?? [];
+    profiles = (resp.profiles ?? []).map((p, i) => ({
+      index: i,
+      name: p.name ?? 'Profile',
+      avatar: p.avatar,
+      kids: !!p.kids || (typeof p.maxRating === 'string' && p.maxRating.length > 0),
+    }));
   } catch {
     profiles = [];
   }

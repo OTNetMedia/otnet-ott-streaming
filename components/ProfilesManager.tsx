@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
+import { PinPrompt } from './PinPrompt';
 
 interface Profile {
   index: number;
@@ -73,22 +74,45 @@ export function ProfilesManager({
   const router = useRouter();
   const [editing, setEditing] = useState<Profile | null>(null);
   const [adding, setAdding] = useState(false);
+  const [pinFor, setPinFor] = useState<Profile | null>(null);
   const [busy, setBusy] = useState(false);
   const [, startTransition] = useTransition();
 
-  async function switchTo(idx: number) {
-    if (idx === activeIndex || busy) return;
+  async function bindProfile(idx: number, pin?: string) {
     setBusy(true);
     try {
-      await fetch('/api/viewer/profile', {
+      const r = await fetch('/api/auth/select-profile', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ profileIndex: idx }),
+        body: JSON.stringify(pin ? { profileIndex: idx, pin } : { profileIndex: idx }),
       });
-      router.push('/');
+      if (r.status === 400) {
+        const data = await r.json().catch(() => ({}));
+        if (data.pinRequired) {
+          const p = profiles.find((x) => x.index === idx) ?? null;
+          setPinFor(p);
+          return { needsPin: true };
+        }
+      }
+      if (!r.ok) {
+        const data = await r.json().catch(() => ({}));
+        return { error: data };
+      }
+      setPinFor(null);
+      const next =
+        typeof window !== 'undefined'
+          ? new URL(window.location.href).searchParams.get('next') || '/'
+          : '/';
+      router.push(next);
+      return { ok: true };
     } finally {
       setBusy(false);
     }
+  }
+
+  async function switchTo(idx: number) {
+    if (busy) return;
+    await bindProfile(idx);
   }
 
   async function createProfile(p: { name: string; avatar?: string; kids?: boolean }) {
@@ -207,6 +231,14 @@ export function ProfilesManager({
           onSubmit={(p) => updateProfile(editing.index, p)}
           onDelete={profiles.length > 1 ? () => removeProfile(editing.index) : undefined}
           busy={busy}
+        />
+      )}
+
+      {pinFor && (
+        <PinPrompt
+          profileName={pinFor.name}
+          onCancel={() => setPinFor(null)}
+          onSubmit={(pin) => bindProfile(pinFor.index, pin)}
         />
       )}
     </>

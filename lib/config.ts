@@ -49,7 +49,10 @@ export async function getPublisherConfig(): Promise<PublisherConfig> {
     ageRatingSystem: s?.ageRatings?.ratingSystem,
     errorReportingEnabled: !!s?.errorReporting?.enabled,
     blockAdSkipping: !!s?.adPolicy?.blockSkipping,
-    profileLimit: s?.profileLimit ?? 5,
+    profileLimit:
+      typeof s?.profileLimit === 'number'
+        ? s.profileLimit
+        : s?.profileLimit?.max ?? 5,
     brandName: s?.branding?.name || 'OTNet',
     brandLogo: s?.branding?.logo || undefined,
   };

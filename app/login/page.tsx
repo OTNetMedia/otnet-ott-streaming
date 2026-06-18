@@ -7,7 +7,12 @@ import { useState } from 'react';
 export default function LoginPage() {
   const router = useRouter();
   const params = useSearchParams();
-  const next = params.get('next') || '/';
+  const requested = params.get('next') || '/';
+  // After login the access token is unbound — the user must pick a profile
+  // before any catalog request will return adult content. Pass the
+  // originally requested URL through as ?next= so /profiles can bounce
+  // there once a profile is bound.
+  const next = `/profiles?next=${encodeURIComponent(requested)}`;
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [err, setErr] = useState('');
