@@ -245,6 +245,19 @@ export function ContentHero({
               {locked && content.paywall && (
                 <PaywallCTA contentId={content._id} paywall={content.paywall} />
               )}
+              {!isSeriesContent && !playable && !(locked && content.paywall) && (
+                <button
+                  type="button"
+                  disabled
+                  className="inline-flex items-center gap-2 rounded-md bg-white/20 px-7 py-2.5 sm:py-3 text-sm font-bold text-white/70 cursor-not-allowed"
+                  aria-label="Not yet available"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M8 5v14l11-7z" />
+                  </svg>
+                  Play · Coming soon
+                </button>
+              )}
               <MyListButton contentId={content._id} />
               <button
                 type="button"
